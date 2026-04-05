@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <circle cx="256" cy="256" r="230" fill="#E9F5F6" />
+  <circle cx="256" cy="256" r="240" fill="none" stroke="#2ec4b6" stroke-width="15" opacity="0.3" />
+  <!-- A more detailed, premium ledger book icon -->
+  <rect x="150" y="120" width="212" height="272" rx="20" fill="#2ec4b6" />
+  <rect x="180" y="160" width="152" height="20" rx="4" fill="#ffffff" opacity="0.6" />
+  <rect x="180" y="210" width="152" height="20" rx="4" fill="#ffffff" opacity="0.6" />
+  <rect x="180" y="260" width="152" height="20" rx="4" fill="#ffffff" opacity="0.6" />
+  <rect x="180" y="310" width="100" height="20" rx="4" fill="#ffffff" opacity="0.6" />
+</svg>

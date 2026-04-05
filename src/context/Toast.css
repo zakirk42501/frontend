@@ -1,0 +1,106 @@
+.toast-container {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 320px;
+  max-width: 450px;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+  pointer-events: auto;
+  animation: toastSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+  transform-origin: center;
+}
+
+.toast-success {
+  border-left: 6px solid var(--success);
+  background: linear-gradient(to right, var(--success-bg), var(--glass-bg) 40%);
+}
+
+.toast-error {
+  border-left: 6px solid var(--danger);
+  background: linear-gradient(to right, var(--danger-bg), var(--glass-bg) 40%);
+}
+
+.toast-info {
+  border-left: 6px solid var(--primary);
+  background: linear-gradient(to right, var(--primary-bg), var(--glass-bg) 40%);
+}
+
+.toast-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transform: scale(1.1);
+}
+
+.toast-success .toast-icon { color: var(--success); filter: drop-shadow(0 0 8px var(--success)); }
+.toast-error .toast-icon { color: var(--danger); filter: drop-shadow(0 0 8px var(--danger)); }
+.toast-info .toast-icon { color: var(--primary); filter: drop-shadow(0 0 8px var(--primary)); }
+
+.toast-message {
+  flex: 1;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.toast-close {
+  background: var(--bg-element);
+  border: none;
+  color: var(--text-secondary);
+  border-radius: var(--radius-full);
+  opacity: 0.7;
+  cursor: pointer;
+  padding: 0.35rem;
+  display: flex;
+  transition: all var(--transition-bounce);
+}
+
+.toast-close:hover {
+  opacity: 1;
+  background-color: var(--danger-bg);
+  color: var(--danger);
+  transform: rotate(90deg) scale(1.1);
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(120%) scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .toast-container {
+    bottom: 1rem;
+    right: 1rem;
+    left: 1rem;
+  }
+  .toast {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
