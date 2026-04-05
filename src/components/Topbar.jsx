@@ -55,6 +55,7 @@ export const Topbar = ({ onMenuClick }) => {
       addToast('Database reset successfully. Schema is intact.', 'success');
       setResetCodeModalOpen(false);
       setResetCodeInput('');
+      api.clearCache?.();
       setTimeout(() => {
         window.location.reload();
       }, 1200);
@@ -78,7 +79,7 @@ export const Topbar = ({ onMenuClick }) => {
             <Menu size={24} />
           </button>
 
-          <div>
+          <div className="topbar-title-wrap">
             <h1 className="page-title">{getPageTitle(location.pathname)}</h1>
             <span className="date-chip">{today}</span>
           </div>

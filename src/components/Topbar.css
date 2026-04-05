@@ -1,5 +1,5 @@
 .topbar {
-  height: var(--topbar-h);
+  min-height: var(--topbar-h);
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -8,6 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
   flex-shrink: 0;
   z-index: 50;
   position: sticky;
@@ -17,13 +18,22 @@
 .topbar-left {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.topbar-title-wrap {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .mobile-menu-btn {
   display: none !important;
   color: var(--text-secondary);
   transition: all var(--transition-normal);
+  flex-shrink: 0;
 }
 
 .mobile-menu-btn:hover {
@@ -38,6 +48,7 @@
   color: var(--text-primary);
   line-height: 1.2;
   letter-spacing: -0.02em;
+  word-break: break-word;
 }
 
 .date-chip {
@@ -52,6 +63,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex-shrink: 0;
 }
 
 .theme-toggle-switch {
@@ -67,6 +79,7 @@
   padding: 0 4px;
   transition: background-color 0.4s ease;
   outline: none;
+  flex-shrink: 0;
 }
 
 .theme-toggle-switch.light-active {
@@ -137,18 +150,72 @@
   .topbar {
     padding: 0 1.25rem;
   }
-  
+
   .mobile-menu-btn {
     display: flex !important;
   }
 }
 
 @media (max-width: 640px) {
+  .topbar {
+    min-height: auto;
+    padding: 0.75rem 1rem;
+    align-items: flex-start;
+  }
+
+  .topbar-left {
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .page-title {
+    font-size: 1.05rem;
+    line-height: 1.15;
+  }
+
+  .date-chip {
+    font-size: 0.65rem;
+    line-height: 1.3;
+  }
+
+  .topbar-right {
+    gap: 0.5rem;
+    align-self: center;
+  }
+
   .hide-mobile {
     display: none;
   }
+
   .reset-btn {
     padding: 0.625rem;
+    min-width: 42px;
   }
 }
 
+@media (max-width: 420px) {
+  .topbar {
+    padding: 0.7rem 0.8rem;
+    gap: 0.75rem;
+  }
+
+  .topbar-right {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.4rem;
+  }
+
+  .theme-toggle-switch {
+    width: 54px;
+    height: 30px;
+  }
+
+  .theme-toggle-thumb {
+    width: 22px;
+    height: 22px;
+  }
+
+  .theme-toggle-switch.light-active .theme-toggle-thumb {
+    transform: translateX(24px);
+  }
+}
