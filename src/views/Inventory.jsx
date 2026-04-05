@@ -3,6 +3,7 @@ import { Plus, Edit, Trash2, Package } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { ConfirmModal, Modal } from '../components/Modal';
 import api from '../lib/api';
+import { attachRealtimeRefresh } from '../lib/realtime';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
@@ -34,6 +35,8 @@ export const Inventory = () => {
   useEffect(() => {
     fetchInventory();
   }, []);
+
+  useEffect(() => attachRealtimeRefresh(fetchInventory, ['inventory_items', 'accounts', 'account_inventory_items']), []);
 
   const handleAddOnChange = (e) => {
     const { name, value } = e.target;

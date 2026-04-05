@@ -7,8 +7,14 @@ import { Accounts } from './views/Accounts';
 import { Payments } from './views/Payments';
 import { Inventory } from './views/Inventory';
 import { ToastProvider } from './context/ToastContext';
+import { subscribeLedgerRealtime } from './lib/realtime';
 
 function App() {
+  React.useEffect(() => {
+    const unsubscribe = subscribeLedgerRealtime();
+    return unsubscribe;
+  }, []);
+
   return (
     <ToastProvider>
       <BrowserRouter>

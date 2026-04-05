@@ -1,17 +1,20 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { ChevronDown, ChevronUp, Plus, Search, Info, Edit, Trash2, Phone, MapPin, Hash, Package, User, X } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { ConfirmModal, Modal } from '../components/Modal';
 import { SearchableSelect } from '../components/SearchableSelect';
 import api from '../lib/api';
+import { attachRealtimeRefresh } from '../lib/realtime';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import './Accounts.css';
 
 const initialInventoryQuickForm = { itemName: '', costPrice: '', quantity: 1 };
+const ACCOUNTS_PAGE_SIZE = 20;
 
 export const Accounts = () => {
   const containerRef = useRef(null);
+  const loadMoreRef = useRef(null);
   const accountNoRef = useRef(null);
   const customerNameRef = useRef(null);
   const customerNumberRef = useRef(null);
@@ -23,7 +26,13 @@ export const Accounts = () => {
   const [accounts, setAccounts] = useState([]);
   const [recoveryMen, setRecoveryMen] = useState([]);
   const [inventory, setInventory] = useState([]);
+  const [accountsPage, setAccountsPage] = useState(1);
+  const [hasMoreAccounts, setHasMoreAccounts] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [bootstrapped, setBootstrapped] = useState(false);
+  const [totalAccounts, setTotalAccounts] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [filterRmId, setFilterRmId] = useState('');
   const [expandedAccId, setExpandedAccId] = useState(null);
   const [installments, setInstallments] = useState([]);
@@ -56,27 +65,114 @@ export const Accounts = () => {
   const [accForm, setAccForm] = useState(initAccForm);
   const [editInstForm, setEditInstForm] = useState({ amount: '', installmentDate: '' });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchAuxiliaryData = useCallback(async () => {
     try {
-      setLoading(true);
-      const [accRes, rmRes, invRes] = await Promise.all([
-        api.get('/accounts'),
+      const [rmRes, invRes] = await Promise.all([
         api.get('/recovery-men'),
         api.get('/inventory'),
       ]);
-      setAccounts(accRes || []);
       setRecoveryMen(rmRes || []);
       setInventory(invRes || []);
+    } catch {
+      addToast('Failed to load supporting account data', 'error');
+    }
+  }, [addToast]);
+
+  const loadAccountsPage = useCallback(async ({ page = 1, append = false, search = '', recoveryManId = '' } = {}) => {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(ACCOUNTS_PAGE_SIZE),
+    });
+
+    if (search) {
+      params.set('search', search);
+    }
+    if (recoveryManId) {
+      params.set('recoveryManId', recoveryManId);
+    }
+
+    try {
+      if (page === 1) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const res = await api.get(`/accounts?${params.toString()}`);
+      const nextItems = Array.isArray(res?.items) ? res.items : [];
+
+      setAccounts((prev) => (append ? [...prev, ...nextItems] : nextItems));
+      setAccountsPage(Number(res?.page || page));
+      setHasMoreAccounts(Boolean(res?.hasMore));
+      setTotalAccounts(Number(res?.total || nextItems.length));
     } catch {
       addToast('Failed to load accounts data', 'error');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  };
+  }, [addToast]);
+
+  const refreshAccounts = useCallback(async () => {
+    setExpandedAccId(null);
+    setInstallments([]);
+    await loadAccountsPage({
+      page: 1,
+      append: false,
+      search: debouncedSearchTerm,
+      recoveryManId: filterRmId,
+    });
+  }, [debouncedSearchTerm, filterRmId, loadAccountsPage]);
+
+  useEffect(() => {
+    fetchAuxiliaryData().finally(() => {
+      setBootstrapped(true);
+    });
+  }, [fetchAuxiliaryData]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (!bootstrapped) return;
+    refreshAccounts();
+  }, [bootstrapped, refreshAccounts]);
+
+  useEffect(() => {
+    const detach = attachRealtimeRefresh(async () => {
+      await Promise.all([fetchAuxiliaryData(), refreshAccounts()]);
+      if (expandedAccId) {
+        await loadInstallments(expandedAccId);
+      }
+    }, ['accounts', 'payments', 'installments', 'inventory_items', 'account_inventory_items', 'recovery_men']);
+
+    return detach;
+  }, [expandedAccId, fetchAuxiliaryData, refreshAccounts]);
+
+  useEffect(() => {
+    if (!bootstrapped || !hasMoreAccounts || loading || loadingMore || !loadMoreRef.current) return undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) return;
+        loadAccountsPage({
+          page: accountsPage + 1,
+          append: true,
+          search: debouncedSearchTerm,
+          recoveryManId: filterRmId,
+        });
+      },
+      { rootMargin: '180px 0px' },
+    );
+
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [accountsPage, bootstrapped, debouncedSearchTerm, filterRmId, hasMoreAccounts, loadAccountsPage, loading, loadingMore]);
 
   const loadInstallments = async (accId) => {
     try {
@@ -266,7 +362,7 @@ export const Accounts = () => {
       setCreateModalOpen(false);
       setAccForm(initAccForm);
       setFieldErrors({ recoveryManId: '', selectedItems: '', customerNumber: '' });
-      await fetchData();
+      await Promise.all([fetchAuxiliaryData(), refreshAccounts()]);
     } catch (error) {
       handleAccountError(error);
     }
@@ -285,7 +381,7 @@ export const Accounts = () => {
       addToast('Inventory item added successfully', 'success');
       setInventoryQuickModalOpen(false);
       setInventoryQuickForm(initialInventoryQuickForm);
-      await fetchData();
+      await fetchAuxiliaryData();
     } catch (error) {
       addToast(error.message || 'Failed to add inventory item', 'error');
     }
@@ -299,7 +395,7 @@ export const Accounts = () => {
       await api.put(`/accounts/${selectedAcc.id}`, buildAccountPayload());
       addToast('Account updated successfully', 'success');
       setEditModalOpen(false);
-      await fetchData();
+      await Promise.all([fetchAuxiliaryData(), refreshAccounts()]);
       if (expandedAccId === selectedAcc.id) {
         await loadInstallments(selectedAcc.id);
       }
@@ -316,7 +412,7 @@ export const Accounts = () => {
         setExpandedAccId(null);
         setInstallments([]);
       }
-      await fetchData();
+      await Promise.all([fetchAuxiliaryData(), refreshAccounts()]);
     } catch (error) {
       addToast(error.message || 'Failed to delete account', 'error');
       throw error;
@@ -333,7 +429,7 @@ export const Accounts = () => {
       addToast('Installment updated successfully', 'success');
       setEditInstModalOpen(false);
       await loadInstallments(expandedAccId);
-      await fetchData();
+      await refreshAccounts();
     } catch (error) {
       addToast(error.message || 'Failed to update installment', 'error');
     }
@@ -344,22 +440,12 @@ export const Accounts = () => {
       await api.delete(`/installments/${selectedInst.id}`);
       addToast('Installment deleted', 'success');
       await loadInstallments(expandedAccId);
-      await fetchData();
+      await refreshAccounts();
     } catch (error) {
       addToast(error.message || 'Failed to delete installment', 'error');
       throw error;
     }
   };
-
-  const filteredAccounts = useMemo(() => accounts.filter((acc) => {
-    const term = searchTerm.trim().toLowerCase();
-    const matchesSearch = !term ||
-      String(acc.accountNo || '').toLowerCase().includes(term) ||
-      String(acc.customerName || '').toLowerCase().includes(term) ||
-      String(acc.customerNumber || '').toLowerCase().includes(term);
-    const matchesRm = filterRmId ? acc.recoveryManId === filterRmId : true;
-    return matchesSearch && matchesRm;
-  }), [accounts, searchTerm, filterRmId]);
 
   const rmOptions = recoveryMen.map((rm) => ({ label: rm.fullName, value: rm.id }));
   const formatCurrency = (amt) => new Intl.NumberFormat('en-PK', { style: 'currency', currency: 'PKR', maximumFractionDigits: 0 }).format(amt || 0);
@@ -410,7 +496,7 @@ export const Accounts = () => {
         gsap.fromTo(cards, { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, stagger: 0.04, ease: 'power2.out' });
       }
     }
-  }, [loading, filteredAccounts]);
+  }, [loading, accounts]);
 
   return (
     <div className="accounts-layout" ref={containerRef}>
@@ -432,10 +518,10 @@ export const Accounts = () => {
       <div>
         {loading ? (
           <div className="p-4 text-center">Loading accounts...</div>
-        ) : filteredAccounts.length === 0 ? (
+        ) : accounts.length === 0 ? (
           <div className="card p-6 text-center text-muted">No accounts found.</div>
         ) : (
-          filteredAccounts.map((acc) => (
+          accounts.map((acc) => (
             <div key={acc.id} className="account-card">
               <div className="account-summary" onClick={() => toggleExpand(acc.id)}>
                 <div className="acc-info-main">
@@ -504,6 +590,11 @@ export const Accounts = () => {
             </div>
           ))
         )}
+        {!loading && accounts.length > 0 ? (
+          <div ref={loadMoreRef} className="p-4 text-center text-muted">
+            {loadingMore ? 'Loading more accounts...' : hasMoreAccounts ? `Showing ${accounts.length} of ${totalAccounts} accounts` : `All ${totalAccounts} accounts loaded`}
+          </div>
+        ) : null}
       </div>
 
       <Modal

@@ -3,6 +3,7 @@ import { Plus, WalletCards } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { SearchableSelect } from '../components/SearchableSelect';
 import api from '../lib/api';
+import { attachRealtimeRefresh } from '../lib/realtime';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
@@ -22,6 +23,11 @@ export const Payments = () => {
     fetchRecoveryMen();
     fetchAccounts();
   }, []);
+
+  useEffect(() => attachRealtimeRefresh(() => {
+    fetchRecoveryMen();
+    fetchAccounts();
+  }, ['accounts', 'payments', 'recovery_men', 'inventory_items', 'account_inventory_items']), []);
 
   const fetchRecoveryMen = async () => {
     try {

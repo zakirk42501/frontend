@@ -4,6 +4,7 @@ import { useToast } from '../context/ToastContext';
 import { ConfirmModal, Modal } from '../components/Modal';
 import { SearchableSelect } from '../components/SearchableSelect';
 import api from '../lib/api';
+import { attachRealtimeRefresh } from '../lib/realtime';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
@@ -36,6 +37,8 @@ export const RecoveryMen = () => {
   useEffect(() => {
     fetchRecoveryMen();
   }, []);
+
+  useEffect(() => attachRealtimeRefresh(fetchRecoveryMen, ['recovery_men']), []);
 
   const handleAdd = async (e) => {
     e.preventDefault();

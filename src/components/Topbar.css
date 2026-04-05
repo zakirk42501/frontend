@@ -196,26 +196,34 @@
 @media (max-width: 420px) {
   .topbar {
     padding: 0.7rem 0.8rem;
-    gap: 0.75rem;
+    gap: 0.55rem;
   }
 
   .topbar-right {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.4rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.35rem;
   }
 
   .theme-toggle-switch {
-    width: 54px;
-    height: 30px;
+    width: 50px;
+    height: 28px;
   }
 
   .theme-toggle-thumb {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
+    top: 4px;
+    left: 4px;
   }
 
   .theme-toggle-switch.light-active .theme-toggle-thumb {
-    transform: translateX(24px);
+    transform: translateX(22px);
+  }
+
+  .reset-btn {
+    min-width: 38px;
+    min-height: 38px;
+    padding: 0.55rem;
   }
 }

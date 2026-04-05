@@ -6,6 +6,7 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import { attachRealtimeRefresh } from '../lib/realtime';
 import './Dashboard.css';
 
 const monthLabels = ['JAN', 'FEB', 'MAR', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -52,6 +53,16 @@ export const Dashboard = () => {
   useEffect(() => {
     fetchDashboard();
   }, []);
+
+  useEffect(() => attachRealtimeRefresh(fetchDashboard, [
+    'accounts',
+    'account_inventory_items',
+    'payments',
+    'installments',
+    'inventory_items',
+    'recovery_men',
+    'cycle_settings',
+  ]), []);
 
   const handleApplyCycle = async () => {
     if (!cycleInput) {
